@@ -1,0 +1,18 @@
+Start
+Traceback (most recent call last):
+  File "D:\Documents\projects\HT\backend\debug_asyncpg.py", line 5, in <module>
+    import asyncpg
+    ^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\asyncpg\__init__.py", line 8, in <module>
+    from .connection import connect, Connection  # NOQA
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\asyncpg\connection.py", line 24, in <module>
+    from . import compat
+    ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\asyncpg\compat.py", line 53, in <module>
+    from ._asyncio_compat import wait_for as wait_for  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\asyncpg\_asyncio_compat.py", line 15, in <module>
+    from asyncio import timeout as timeout_ctx
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'timeout' from 'asyncio' (C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\asyncio\__init__.py)

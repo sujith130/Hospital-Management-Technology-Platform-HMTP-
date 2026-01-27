@@ -1,0 +1,30 @@
+Error encountered:
+Traceback (most recent call last):
+  File "D:\Documents\projects\HT\backend\debug_import.py", line 6, in <module>
+    import pydantic_settings
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic_settings\__init__.py", line 2, in <module>
+    from .main import BaseSettings, CliApp, SettingsConfigDict
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic_settings\main.py", line 12, in <module>
+    from pydantic import ConfigDict
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\__init__.py", line 5, in <module>
+    from ._migration import getattr_migration
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\_migration.py", line 4, in <module>
+    from pydantic.warnings import PydanticDeprecatedSince20
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\warnings.py", line 5, in <module>
+    from .version import version_short
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\version.py", line 7, in <module>
+    from pydantic_core import __version__ as __pydantic_core_version__
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic_core\__init__.py", line 31, in <module>
+    from .core_schema import CoreConfig, CoreSchema, CoreSchemaType, ErrorType
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic_core\core_schema.py", line 26, in <module>
+    from typing import Protocol, Required, TypeAlias
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'Required' from 'typing' (C:\Users\chsuj\AppData\Local\Programs\Python\Python311\Lib\typing.py)

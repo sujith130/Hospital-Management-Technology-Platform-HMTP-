@@ -1,0 +1,8 @@
+.schedule-container { display: flex; flex-direction: column; gap: 20px; }
+.date-header { display: flex; justify-content: center; background: white; padding: 15px; border-radius: 8px; }
+.slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+.time-slot { background: white; border: 1px solid #e1e4e8; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; }
+.slot-available { border-left: 5px solid #28a745; }
+.slot-booked { border-left: 5px solid #dc3545; background-color: #fff5f5; cursor: default; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
+.modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px; display: flex; flex-direction: column; gap: 10px; }

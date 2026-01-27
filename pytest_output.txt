@@ -1,0 +1,309 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.11, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\chsuj\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Documents\projects\HT\backend
+configfile: pytest.ini
+plugins: anyio-4.12.1
+collecting ... collected 1 item
+
+backend\tests\test_clinical_workflow.py::test_end_to_end_clinical_workflow FAILED [100%]
+
+================================== FAILURES ===================================
+______________________ test_end_to_end_clinical_workflow ______________________
+
+request = <starlette.middleware.base._CachedRequest object at 0x0000024DF87AA360>
+
+    async def call_next(request: Request) -> Response:
+        async def receive_or_disconnect() -> Message:
+            if response_sent.is_set():
+                return {"type": "http.disconnect"}
+    
+            async with anyio.create_task_group() as task_group:
+    
+                async def wrap(func: Callable[[], Awaitable[T]]) -> T:
+                    result = await func()
+                    task_group.cancel_scope.cancel()
+                    return result
+    
+                task_group.start_soon(wrap, response_sent.wait)
+                message = await wrap(wrapped_receive)
+    
+            if response_sent.is_set():
+                return {"type": "http.disconnect"}
+    
+            return message
+    
+        async def send_no_error(message: Message) -> None:
+            try:
+                await send_stream.send(message)
+            except anyio.BrokenResourceError:
+                # recv_stream has been closed, i.e. response_sent has been set.
+                return
+    
+        async def coro() -> None:
+            nonlocal app_exc
+    
+            with send_stream:
+                try:
+                    await self.app(scope, receive_or_disconnect, send_no_error)
+                except Exception as exc:
+                    app_exc = exc
+    
+        task_group.start_soon(coro)
+    
+        try:
+>           message = await recv_stream.receive()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\base.py:151: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = MemoryObjectReceiveStream(_state=_MemoryObjectStreamState(max_buffer_size=0, buffer=deque([]), open_send_channels=0, open_receive_channels=0, waiting_receivers=OrderedDict(), waiting_senders=OrderedDict()), _closed=True)
+
+    async def receive(self) -> T_co:
+        await checkpoint()
+        try:
+            return self.receive_nowait()
+        except WouldBlock:
+            # Add ourselves in the queue
+            receive_event = Event()
+            receiver = _MemoryObjectItemReceiver[T_co]()
+            self._state.waiting_receivers[receive_event] = receiver
+    
+            try:
+                await receive_event.wait()
+            finally:
+                self._state.waiting_receivers.pop(receive_event, None)
+    
+            try:
+                return receiver.item
+            except AttributeError:
+>               raise EndOfStream from None
+E               anyio.EndOfStream
+
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\anyio\streams\memory.py:132: EndOfStream
+
+The above exception was the direct cause of the following exception:
+
+client = <httpx.AsyncClient object at 0x0000024DF87EF4D0>
+
+    @pytest.mark.anyio
+    async def test_end_to_end_clinical_workflow(client: AsyncClient):
+        # 1. Setup Tenant A
+        hospital_a = "HOSP_A"
+        user_a_email = "admin@hosp-a.com"
+        reg_a = await client.post(
+            f"{config.settings.API_V1_STR}/auth/register",
+            json={"email": user_a_email, "password": "password", "full_name": "Admin A", "role": "admin", "hospital_id": hospital_a}
+        )
+        assert reg_a.status_code == 200, f"Registration A failed: {reg_a.text}"
+    
+        login_a = await client.post(
+            f"{config.settings.API_V1_STR}/auth/login",
+            data={"username": user_a_email, "password": "password"}
+        )
+        assert login_a.status_code == 200, f"Login A failed: {login_a.text}"
+        token_a = login_a.json()["access_token"]
+        headers_a = {"Authorization": f"Bearer {token_a}"}
+    
+        # 2. Setup Tenant B (for isolation check)
+        hospital_b = "HOSP_B"
+        user_b_email = "admin@hosp-b.com"
+        await client.post(
+            f"{config.settings.API_V1_STR}/auth/register",
+            json={"email": user_b_email, "password": "password", "full_name": "Admin B", "role": "admin", "hospital_id": hospital_b}
+        )
+        login_b = await client.post(
+            f"{config.settings.API_V1_STR}/auth/login",
+            data={"username": user_b_email, "password": "password"}
+        )
+        token_b = login_b.json()["access_token"]
+        headers_b = {"Authorization": f"Bearer {token_b}"}
+    
+        # 3. Create Patient in Tenant A
+        patient_res = await client.post(
+            f"{config.settings.API_V1_STR}/patients/",
+            json={"first_name": "John", "last_name": "Doe", "gender": "Male", "date_of_birth": "1990-01-01"},
+            headers=headers_a
+        )
+        assert patient_res.status_code == 200
+        patient_id = patient_res.json()["id"]
+    
+        # 4. Verify isolation: Tenant B cannot see Patient A
+        list_patients_b = await client.get(f"{config.settings.API_V1_STR}/patients/", headers=headers_b)
+        assert len(list_patients_b.json()) == 0
+    
+        # 5. Create Doctor and Availability in Tenant A
+>       doctor_res = await client.post(
+            f"{config.settings.API_V1_STR}/doctors/",
+            json={"full_name": "Dr. Smith", "specialization": "Cardiology"},
+            headers=headers_a
+        )
+
+backend\tests\test_clinical_workflow.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_client.py:1859: in post
+    return await self.request(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_client.py:1629: in send
+    response = await self._send_handling_auth(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_transports\asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\applications.py:1135: in __call__
+    await super().__call__(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\applications.py:107: in __call__
+    await self.middleware_stack(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py:186: in __call__
+    raise exc
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\cors.py:85: in __call__
+    await self.app(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\contextlib.py:162: in __exit__
+    self.gen.throw(value)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_utils.py:85: in collapse_excgroups
+    raise exc
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\app\core\middleware.py:48: in dispatch
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+backend\app\core\middleware.py:40: in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\middleware\exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\middleware\asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py:736: in app
+    await route.handle(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\routing.py:290: in handle
+    await self.app(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:115: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py:53: in wrapped_app
+    raise exc
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\starlette\_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:101: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:355: in app
+    raw_response = await run_endpoint_function(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\routing.py:243: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\app\doctors\router.py:36: in create_doctor
+    db_doctor.availabilities = [] # Avoid lazy-load error
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\attributes.py:540: in __set__
+    self.impl.set(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\attributes.py:1976: in set
+    old = self.get(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\attributes.py:1096: in get
+    value = self._fire_loader_callables(state, key, passive)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\attributes.py:1131: in _fire_loader_callables
+    return self.callable_(state, passive)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\strategies.py:978: in _load_for_state
+    return self._emit_lazyload(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\strategies.py:1141: in _emit_lazyload
+    result = session.execute(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\session.py:2351: in execute
+    return self._execute_internal(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\session.py:2249: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\orm\context.py:306: in orm_execute_statement
+    result = conn.execute(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\engine\base.py:1419: in execute
+    return meth(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\sql\elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\engine\base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\engine\base.py:1846: in _execute_context
+    return self._exec_single_context(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\engine\base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\engine\base.py:2366: in _handle_dbapi_exception
+    raise exc_info[1].with_traceback(exc_info[2])
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\engine\base.py:1967: in _exec_single_context
+    self.dialect.do_execute(
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\engine\default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\dialects\sqlite\aiosqlite.py:182: in execute
+    self._adapt_connection._handle_exception(error)
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\dialects\sqlite\aiosqlite.py:342: in _handle_exception
+    raise error
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\dialects\sqlite\aiosqlite.py:159: in execute
+    _cursor: AsyncIODBAPICursor = self.await_(self._connection.cursor())  # type: ignore[arg-type] # noqa: E501
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+awaitable = <aiosqlite.context.Result object at 0x0000024DF8AA1240>
+
+    def await_only(awaitable: Awaitable[_T]) -> _T:
+        """Awaits an async function in a sync method.
+    
+        The sync method must be inside a :func:`greenlet_spawn` context.
+        :func:`await_only` calls cannot be nested.
+    
+        :param awaitable: The coroutine to call.
+    
+        """
+        # this is called in the context greenlet while running fn
+        current = getcurrent()
+        if not getattr(current, "__sqlalchemy_greenlet_provider__", False):
+            _safe_cancel_awaitable(awaitable)
+    
+>           raise exc.MissingGreenlet(
+                "greenlet_spawn has not been called; can't call await_only() "
+                "here. Was IO attempted in an unexpected place?"
+            )
+E           sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+
+C:\Users\chsuj\AppData\Local\Programs\Python\Python313\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py:123: MissingGreenlet
+============================== warnings summary ===============================
+backend\app\core\config.py:4
+  D:\Documents\projects\HT\backend\app\core\config.py:4: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+backend\app\core\base.py:5
+  D:\Documents\projects\HT\backend\app\core\base.py:5: MovedIn20Warning: The ``as_declarative()`` function is now available as sqlalchemy.orm.as_declarative() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    @as_declarative()
+
+backend\app\auth\schemas.py:24
+  D:\Documents\projects\HT\backend\app\auth\schemas.py:24: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class UserResponse(UserBase):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED backend\tests\test_clinical_workflow.py::test_end_to_end_clinical_workflow - sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+======================== 1 failed, 3 warnings in 2.06s ========================
