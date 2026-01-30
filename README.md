@@ -4,6 +4,55 @@ A scalable, cloud-native hospital management system designed for multi-hospital 
 
 ---
 
+## Platform overview
+
+### Homepage
+Hero section, stats (50K+ patients, 200+ doctors, 15+ departments, 25+ years), and quick links.
+
+![Homepage](docs/screenshots/homepage.png)
+
+### Our Services
+Emergency care, outpatient services, advanced surgery, diagnostic services, cardiology, pharmacy.
+
+![Our Services](docs/screenshots/our-services.png)
+
+### Services page (detail)
+24/7 Emergency Care, OPD, and Advanced Surgery with feature bullets.
+
+![Services page](docs/screenshots/services-page.png)
+
+### Our Departments
+Specialized departments with specialist counts: Cardiology, Neurology, Orthopedics, Pediatrics, Oncology, General Medicine.
+
+![Departments](docs/screenshots/departments.png)
+
+### Find a Doctor
+Search and filter by specialty; doctor cards with availability and “Book Appointment”.
+
+![Find a Doctor](docs/screenshots/find-doctor.png)
+
+### Book an Appointment
+Multi-step booking starting with personal information.
+
+![Book Appointment](docs/screenshots/book-appointment.png)
+
+### Patient Login
+Health portal welcome, secure access messaging, and test patient credentials.
+
+![Patient Login](docs/screenshots/patient-login.png)
+
+### Testimonials & Emergency
+Patient reviews and 24/7 emergency call-to-action.
+
+![Testimonials and Emergency](docs/screenshots/testimonials-emergency.png)
+
+### Footer
+CTA banner, quick links, departments, contact info, and emergency number.
+
+![Footer](docs/screenshots/footer.png)
+
+---
+
 ## Features
 
 ### Backend (FastAPI)
